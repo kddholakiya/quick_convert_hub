@@ -45,7 +45,7 @@ const base64ToBuffer = (base64: string) => {
 };
 
 /** Hex string → Uint8Array */
-const hexToBytes = (hex: string): Uint8Array => {
+const hexToBytes = (hex: string): Uint8Array<ArrayBuffer> => {
   const cleaned = hex.replace(/\s/g, "");
   if (cleaned.length % 2 !== 0) throw new Error("Hex string has odd length");
   const bytes = new Uint8Array(cleaned.length / 2);
@@ -63,7 +63,7 @@ const bytesToHex = (bytes: Uint8Array): string =>
 
 // ──── PBKDF2 + AES-GCM (password-based) ──────────────────────────────
 
-const deriveKey = async (password: string, salt: Uint8Array) => {
+const deriveKey = async (password: string, salt: Uint8Array<ArrayBuffer>) => {
   const importedKey = await window.crypto.subtle.importKey(
     "raw",
     textToBuffer(password),
@@ -118,7 +118,7 @@ type KeyFormat = "hex" | "base64" | "utf8";
 type IVFormat = "hex" | "base64" | "utf8";
 
 /** Parse raw key from user input */
-const parseRawKey = (raw: string, fmt: KeyFormat): Uint8Array => {
+const parseRawKey = (raw: string, fmt: KeyFormat): Uint8Array<ArrayBuffer> => {
   if (fmt === "hex") return hexToBytes(raw);
   if (fmt === "base64") return new Uint8Array(base64ToBuffer(raw));
   // UTF-8 — must be 16, 24, or 32 bytes
@@ -126,7 +126,7 @@ const parseRawKey = (raw: string, fmt: KeyFormat): Uint8Array => {
 };
 
 /** Parse raw IV from user input */
-const parseRawIV = (raw: string, fmt: IVFormat): Uint8Array => {
+const parseRawIV = (raw: string, fmt: IVFormat): Uint8Array<ArrayBuffer> => {
   if (fmt === "hex") return hexToBytes(raw);
   if (fmt === "base64") return new Uint8Array(base64ToBuffer(raw));
   return textToBuffer(raw);
@@ -134,8 +134,8 @@ const parseRawIV = (raw: string, fmt: IVFormat): Uint8Array => {
 
 const rawAesEncrypt = async (
   plaintext: string,
-  keyBytes: Uint8Array,
-  ivBytes: Uint8Array
+  keyBytes: Uint8Array<ArrayBuffer>,
+  ivBytes: Uint8Array<ArrayBuffer>
 ): Promise<string> => {
   const keyLengths = [16, 24, 32];
   if (!keyLengths.includes(keyBytes.length))
@@ -163,8 +163,8 @@ const rawAesEncrypt = async (
 const rawAesDecrypt = async (
   ciphertextInput: string,
   inputFormat: "base64" | "hex",
-  keyBytes: Uint8Array,
-  ivBytes: Uint8Array
+  keyBytes: Uint8Array<ArrayBuffer>,
+  ivBytes: Uint8Array<ArrayBuffer>
 ): Promise<string> => {
   const keyLengths = [16, 24, 32];
   if (!keyLengths.includes(keyBytes.length))

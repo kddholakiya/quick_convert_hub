@@ -23,7 +23,8 @@ import {
   Palette,
   Link2,
   Clock,
-  Search
+  Search,
+  Timer
 } from "lucide-react";
 import QrTool from "./qr-tool";
 import Base64Tool from "./base64-tool";
@@ -36,9 +37,10 @@ import UrlTool from "./url-tool";
 import CronTool from "./cron-tool";
 import RegexTool from "./regex-tool";
 import BcryptTool from "./bcrypt-tool";
+import EpochTool from "./epoch-tool";
 import { Button } from "@/components/ui/button";
 
-type ToolType = "qr" | "base64" | "crypto" | "json" | "jwt" | "hash" | "color" | "url" | "cron" | "regex" | "bcrypt";
+type ToolType = "qr" | "base64" | "crypto" | "json" | "jwt" | "hash" | "color" | "url" | "cron" | "regex" | "bcrypt" | "epoch";
 
 interface ToolItem {
   id: ToolType;
@@ -167,6 +169,17 @@ const TOOLS: ToolItem[] = [
     badge: "Secure",
     accentClass: "text-indigo-400 border-indigo-500/20 bg-indigo-500/5",
     bgGlowClass: "from-indigo-500/10 via-transparent to-transparent"
+  },
+  {
+    id: "epoch",
+    href: "/epoch-converter",
+    name: "Epoch Time Converter",
+    shortDesc: "Unix timestamp to date & timezone",
+    desc: "Convert Unix epoch timestamps into local date and time across any country or timezone, and compare multiple locations side-by-side.",
+    icon: Timer,
+    badge: "New",
+    accentClass: "text-teal-400 border-teal-500/20 bg-teal-500/5",
+    bgGlowClass: "from-teal-500/10 via-transparent to-transparent"
   }
 ];
 
@@ -225,7 +238,9 @@ export default function ToolHub({ activeTool }: { activeTool: ToolType }) {
                     ? CronTool
                     : activeTool === "bcrypt"
                       ? BcryptTool
-                      : RegexTool;
+                      : activeTool === "regex"
+                        ? RegexTool
+                        : EpochTool;
 
   return (
     <div className="flex-1 w-full min-h-screen bg-black text-zinc-100 flex flex-col relative overflow-hidden font-sans select-none antialiased">
@@ -404,7 +419,9 @@ export default function ToolHub({ activeTool }: { activeTool: ToolType }) {
                                 ? "from-orange-400 to-amber-600"
                                 : activeTool === "bcrypt"
                                   ? "from-indigo-400 to-blue-600"
-                                  : "from-lime-400 to-green-600"
+                                  : activeTool === "regex"
+                                    ? "from-lime-400 to-green-600"
+                                    : "from-teal-400 to-cyan-600"
             }`} />
             <div>
               <div className="flex items-center gap-2">
@@ -436,7 +453,8 @@ export default function ToolHub({ activeTool }: { activeTool: ToolType }) {
                 activeTool === "url" ? "text-sky-400" :
                 activeTool === "cron" ? "text-orange-400" :
                 activeTool === "bcrypt" ? "text-indigo-400" :
-                "text-lime-400"
+                activeTool === "regex" ? "text-lime-400" :
+                "text-teal-400"
               }`} />
               Active Workspace
             </div>

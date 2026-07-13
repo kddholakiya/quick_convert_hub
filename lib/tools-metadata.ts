@@ -10,7 +10,8 @@ export type ToolSlug =
   | "color-converter"
   | "url-tools"
   | "cron-translator"
-  | "regex-tester";
+  | "regex-tester"
+  | "epoch-converter";
 
 interface ToolMeta {
   activeTool:
@@ -23,7 +24,8 @@ interface ToolMeta {
     | "color"
     | "url"
     | "cron"
-    | "regex";
+    | "regex"
+    | "epoch";
   title: string;
   description: string;
   keywords: string[];
@@ -100,6 +102,13 @@ export const TOOLS_META: Record<ToolSlug, ToolMeta> = {
     description: "Test regular expressions against text with live match highlighting and a built-in regex cheat sheet.",
     keywords: ["regex tester", "regular expression tester", "regex online", "regex cheat sheet", "test regex pattern"],
     heading: "Regex Tester - Free Online Regular Expression Tester & Cheat Sheet",
+  },
+  "epoch-converter": {
+    activeTool: "epoch",
+    title: "Epoch Time Converter - Unix Timestamp to Date Online Free",
+    description: "Convert Unix epoch timestamps (seconds or milliseconds) to local date and time across any country or timezone, and compare multiple locations side-by-side.",
+    keywords: ["epoch converter", "unix timestamp converter", "epoch to date", "timestamp to timezone", "unix time online"],
+    heading: "Epoch Time Converter - Free Online Unix Timestamp & Timezone Converter",
   },
 };
 

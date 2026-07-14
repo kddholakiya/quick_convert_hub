@@ -550,11 +550,11 @@ export default function EpochTool() {
                   </CommandInputGroup>
                   <CommandPortal>
                     <CommandPositioner>
-                      <CommandPopup>
-                        <CommandEmpty>No matching country or timezone.</CommandEmpty>
-                        <CommandList>
+                      <CommandPopup >
+                        <CommandEmpty className={'p-3'}>No matching country or timezone.</CommandEmpty>
+                        <CommandList className={'custom-scrollbar p-0'}>
                           {(item: TimezoneOption) => (
-                            <CommandItem key={item.id} value={item}>
+                            <CommandItem key={item.id} value={item} >
                               {item.country} — {item.city}
                             </CommandItem>
                           )}
@@ -593,56 +593,58 @@ export default function EpochTool() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-zinc-900 hover:bg-transparent">
-                  <TableHead className="text-zinc-400">Location</TableHead>
-                  <TableHead className="text-zinc-400">Local Date</TableHead>
-                  <TableHead className="text-zinc-400">Local Time</TableHead>
-                  <TableHead className="text-zinc-400">Day</TableHead>
-                  <TableHead className="text-zinc-400">Timezone</TableHead>
-                  <TableHead className="text-zinc-400">UTC Offset</TableHead>
-                  <TableHead className="text-zinc-400 text-right">Copy</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((row) => (
-                  <TableRow key={row.option.id} className="border-zinc-900">
-                    <TableCell className="text-zinc-200 font-medium">
-                      {row.option.country}
-                      <div className="text-[10px] text-zinc-500 font-normal">{row.option.city}</div>
-                    </TableCell>
-                    <TableCell className="text-zinc-300 font-mono text-xs">{row.localDate}</TableCell>
-                    <TableCell className="text-zinc-300 font-mono text-xs">{row.localTime}</TableCell>
-                    <TableCell className="text-zinc-300 text-xs">{row.dayOfWeek}</TableCell>
-                    <TableCell className="text-zinc-400 text-xs">
-                      <Tooltip>
-                        <TooltipTrigger render={<span className="cursor-default" />}>
-                          {row.timezoneName}
-                        </TooltipTrigger>
-                        <TooltipContent>{row.option.zone}</TooltipContent>
-                      </Tooltip>
-                    </TableCell>
-                    <TableCell className="text-zinc-400 font-mono text-xs">{row.utcOffset}</TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() =>
-                          copyToClipboard(
-                            `${row.option.country} (${row.option.city}): ${row.localDate} ${row.localTime} ${row.dayOfWeek}, ${row.timezoneName} (${row.utcOffset})`,
-                            `${row.option.country} copied!`
-                          )
-                        }
-                        className="text-zinc-500 hover:text-teal-400"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </Button>
-                    </TableCell>
+            <div className={rows.length > 10 ? "max-h-[400px] overflow-y-auto custom-scrollbar" : ""}>
+              <Table>
+                <TableHeader className={rows.length > 10 ? "sticky top-0 bg-zinc-950/60 z-10" : ""}>
+                  <TableRow className="border-zinc-900 hover:bg-transparent">
+                    <TableHead className="text-zinc-400">Location</TableHead>
+                    <TableHead className="text-zinc-400">Local Date</TableHead>
+                    <TableHead className="text-zinc-400">Local Time</TableHead>
+                    <TableHead className="text-zinc-400">Day</TableHead>
+                    <TableHead className="text-zinc-400">Timezone</TableHead>
+                    <TableHead className="text-zinc-400">UTC Offset</TableHead>
+                    <TableHead className="text-zinc-400 text-right">Copy</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((row) => (
+                    <TableRow key={row.option.id} className="border-zinc-900">
+                      <TableCell className="text-zinc-200 font-medium">
+                        {row.option.country}
+                        <div className="text-[10px] text-zinc-500 font-normal">{row.option.city}</div>
+                      </TableCell>
+                      <TableCell className="text-zinc-300 font-mono text-xs">{row.localDate}</TableCell>
+                      <TableCell className="text-zinc-300 font-mono text-xs">{row.localTime}</TableCell>
+                      <TableCell className="text-zinc-300 text-xs">{row.dayOfWeek}</TableCell>
+                      <TableCell className="text-zinc-400 text-xs">
+                        <Tooltip>
+                          <TooltipTrigger render={<span className="cursor-default" />}>
+                            {row.timezoneName}
+                          </TooltipTrigger>
+                          <TooltipContent>{row.option.zone}</TooltipContent>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell className="text-zinc-400 font-mono text-xs">{row.utcOffset}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() =>
+                            copyToClipboard(
+                              `${row.option.country} (${row.option.city}): ${row.localDate} ${row.localTime} ${row.dayOfWeek}, ${row.timezoneName} (${row.utcOffset})`,
+                              `${row.option.country} copied!`
+                            )
+                          }
+                          className="text-zinc-500 hover:text-teal-400"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       )}

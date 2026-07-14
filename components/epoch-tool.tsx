@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import gsap from "gsap";
-import { formatInTimeZone, getTimezoneOffset } from "date-fns-tz";
+import { formatInTimeZone, getTimezoneOffset, fromZonedTime } from "date-fns-tz";
 import {
   Clock,
   Copy,
@@ -12,6 +12,7 @@ import {
   RefreshCw,
   AlertCircle,
   CalendarClock,
+  ArrowLeftRight,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,19 @@ import { TIMEZONE_OPTIONS, type TimezoneOption } from "@/lib/timezones";
 import { toast } from "sonner";
 
 type EpochFormat = "auto" | "seconds" | "milliseconds";
+type ConverterMode = "epochToDate" | "dateToEpoch";
+
+function getDeviceTimezoneOption(): TimezoneOption {
+  let zone = "UTC";
+  try {
+    zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    // fall back to UTC
+  }
+  const match = TIMEZONE_OPTIONS.find((z) => z.zone === zone);
+  if (match) return match;
+  return { id: `device-${zone}`, country: "Device", city: zone, zone };
+}
 
 function detectFormat(raw: string): "seconds" | "milliseconds" | null {
   const trimmed = raw.trim();
@@ -101,13 +115,25 @@ interface ConversionRow {
 }
 
 export default function EpochTool() {
+  const [mode, setMode] = useState<ConverterMode>("epochToDate");
   const [epochInput, setEpochInput] = useState(() => Math.floor(Date.now() / 1000).toString());
   const [format, setFormat] = useState<EpochFormat>("auto");
-  const [selectedZones, setSelectedZones] = useState<TimezoneOption[]>([
-    TIMEZONE_OPTIONS[0],
-    TIMEZONE_OPTIONS.find((z) => z.zone === "America/New_York")!,
-  ]);
+  const deviceZone = useMemo(() => getDeviceTimezoneOption(), []);
+  const [selectedZones, setSelectedZones] = useState<TimezoneOption[]>(() => {
+    const utc = TIMEZONE_OPTIONS.find((z) => z.zone === "UTC")!;
+    return deviceZone.zone === "UTC" ? [utc] : [deviceZone, utc];
+  });
   const [now, setNow] = useState<number>(() => Date.now());
+
+  const [dtDate, setDtDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
+  const [dtTime, setDtTime] = useState(() => {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
+  });
+  const [dtZone, setDtZone] = useState<TimezoneOption>(deviceZone);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -147,6 +173,22 @@ export default function EpochTool() {
       utcOffset: getUtcOffsetLabel(date, option.zone),
     }));
   }, [isValid, date, selectedZones]);
+
+  const dtResult = useMemo(() => {
+    if (!dtDate || !dtTime) return null;
+    const timeStr = dtTime.length === 5 ? `${dtTime}:00` : dtTime;
+    const localStr = `${dtDate}T${timeStr}`;
+    try {
+      const utcDate = fromZonedTime(localStr, dtZone.zone);
+      if (isNaN(utcDate.getTime())) return null;
+      return {
+        seconds: Math.floor(utcDate.getTime() / 1000),
+        millis: utcDate.getTime(),
+      };
+    } catch {
+      return null;
+    }
+  }, [dtDate, dtTime, dtZone]);
 
   const copyToClipboard = (text: string, msg: string) => {
     navigator.clipboard.writeText(text);
@@ -206,7 +248,7 @@ export default function EpochTool() {
       </Card>
 
       {/* UTC Time */}
-      {isValid && utcTime && (
+      {mode === "epochToDate" && isValid && utcTime && (
         <Card className="bg-zinc-950/60 border-zinc-700/80 backdrop-blur-xl animate-fade-in">
           <CardHeader className="border-b border-zinc-900 pb-4">
             <CardTitle className="text-sm text-zinc-400 font-semibold uppercase tracking-wider flex items-center gap-1.5">
@@ -227,9 +269,150 @@ export default function EpochTool() {
         </Card>
       )}
 
+      {/* Mode Toggle */}
+      <div className="flex items-center gap-2 animate-fade-in">
+        <Button
+          variant={mode === "epochToDate" ? "default" : "outline"}
+          onClick={() => setMode("epochToDate")}
+          className={mode === "epochToDate" ? "bg-teal-600 hover:bg-teal-500 text-white" : "border-zinc-700 bg-zinc-900/60 text-zinc-400"}
+        >
+          <Clock className="w-4 h-4 mr-1.5" /> Epoch → Date
+        </Button>
+        <Button
+          variant={mode === "dateToEpoch" ? "default" : "outline"}
+          onClick={() => setMode("dateToEpoch")}
+          className={mode === "dateToEpoch" ? "bg-teal-600 hover:bg-teal-500 text-white" : "border-zinc-700 bg-zinc-900/60 text-zinc-400"}
+        >
+          <ArrowLeftRight className="w-4 h-4 mr-1.5" /> Date → Epoch
+        </Button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <div className="lg:col-span-5 space-y-6">
+        <div className={mode === "dateToEpoch" ? "lg:col-span-12 space-y-6" : "lg:col-span-5 space-y-6"}>
+          {mode === "dateToEpoch" && (
+            <Card className="bg-zinc-950/60 border-zinc-700/80 backdrop-blur-xl animate-fade-in relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-teal-500/5 blur-3xl rounded-full -mr-16 -mt-16 pointer-events-none" />
+              <CardHeader>
+                <CardTitle className="text-zinc-50 flex items-center gap-2">
+                  <ArrowLeftRight className="w-5 h-5 text-teal-400" />
+                  Date/Time to Epoch
+                </CardTitle>
+                <CardDescription className="text-zinc-400">
+                  Pick a date, time, and timezone to convert to a Unix timestamp.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="dt-date" className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">
+                      Date
+                    </Label>
+                    <Input
+                      id="dt-date"
+                      type="date"
+                      value={dtDate}
+                      onChange={(e) => setDtDate(e.target.value)}
+                      className="bg-white/5 backdrop-blur-md border-white/15 shadow-inner shadow-black/30 focus:border-teal-400/60 focus:ring-2 focus:ring-teal-500/20 text-zinc-100 font-mono text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dt-time" className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">
+                      Time
+                    </Label>
+                    <Input
+                      id="dt-time"
+                      type="time"
+                      step="1"
+                      value={dtTime}
+                      onChange={(e) => setDtTime(e.target.value)}
+                      className="bg-white/5 backdrop-blur-md border-white/15 shadow-inner shadow-black/30 focus:border-teal-400/60 focus:ring-2 focus:ring-teal-500/20 text-zinc-100 font-mono text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">
+                    Timezone
+                  </Label>
+                  <Select
+                    value={dtZone.id}
+                    onValueChange={(v) => {
+                      const opt = TIMEZONE_OPTIONS.find((z) => z.id === v) ?? deviceZone;
+                      setDtZone(opt);
+                    }}
+                  >
+                    <SelectTrigger className="w-full bg-white/5 backdrop-blur-md border-white/15 shadow-inner shadow-black/30 text-zinc-100 focus:border-teal-400/60 focus:ring-2 focus:ring-teal-500/20">
+                      <SelectValue placeholder="Select timezone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {!TIMEZONE_OPTIONS.some((z) => z.id === deviceZone.id) && (
+                        <SelectItem value={deviceZone.id}>
+                          Device — {deviceZone.city}
+                        </SelectItem>
+                      )}
+                      {TIMEZONE_OPTIONS.map((z) => (
+                        <SelectItem key={z.id} value={z.id}>
+                          {z.country} — {z.city}
+                          {z.id === deviceZone.id ? " (device)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {dtResult ? (
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between gap-2 bg-zinc-900/60 border border-zinc-800 rounded-lg px-3 py-2">
+                      <div>
+                        <span className="text-[10px] text-zinc-500 uppercase font-semibold block">Seconds</span>
+                        <span className="font-mono text-sm text-zinc-100 tabular-nums">{dtResult.seconds}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => copyToClipboard(dtResult.seconds.toString(), "Seconds copied!")}
+                        className="text-zinc-500 hover:text-teal-400"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 bg-zinc-900/60 border border-zinc-800 rounded-lg px-3 py-2">
+                      <div>
+                        <span className="text-[10px] text-zinc-500 uppercase font-semibold block">Milliseconds</span>
+                        <span className="font-mono text-sm text-zinc-100 tabular-nums">{dtResult.millis}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => copyToClipboard(dtResult.millis.toString(), "Milliseconds copied!")}
+                        className="text-zinc-500 hover:text-teal-400"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setEpochInput(dtResult.seconds.toString());
+                        setFormat("auto");
+                        setMode("epochToDate");
+                      }}
+                      className="text-zinc-400 hover:text-teal-400 hover:bg-teal-500/10 text-xs h-8"
+                    >
+                      <ArrowLeftRight className="w-3 h-3 mr-1" /> Use as epoch input
+                    </Button>
+                  </div>
+                ) : (
+                  <Badge variant="outline" className="border-rose-500/30 bg-rose-500/10 text-rose-400">
+                    <AlertCircle className="w-3 h-3" /> Invalid date/time
+                  </Badge>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Epoch Input */}
+          {mode === "epochToDate" && (
           <Card className="bg-zinc-950/60 border-zinc-700/80 backdrop-blur-xl animate-fade-in relative overflow-hidden">
             <div className="absolute top-0 right-0 w-48 h-48 bg-teal-500/5 blur-3xl rounded-full -mr-16 -mt-16 pointer-events-none" />
             <CardHeader>
@@ -252,7 +435,7 @@ export default function EpochTool() {
                     value={epochInput}
                     onChange={(e) => setEpochInput(e.target.value)}
                     placeholder="1700000000"
-                    className="bg-zinc-900/60 border-zinc-700 focus:border-teal-500/50 text-zinc-100 placeholder-zinc-600 font-mono text-sm"
+                    className="bg-white/5 backdrop-blur-md border-white/15 shadow-inner shadow-black/30 focus:border-teal-400/60 focus:ring-2 focus:ring-teal-500/20 text-zinc-100 placeholder-zinc-600 font-mono text-sm"
                   />
                   <Tooltip>
                     <TooltipTrigger
@@ -296,7 +479,7 @@ export default function EpochTool() {
                   Format
                 </Label>
                 <Select value={format} onValueChange={(v) => setFormat(v as EpochFormat)}>
-                  <SelectTrigger className="w-full bg-zinc-900/60 border-zinc-700 text-zinc-100">
+                  <SelectTrigger className="w-full bg-white/5 backdrop-blur-md border-white/15 shadow-inner shadow-black/30 text-zinc-100 focus:border-teal-400/60 focus:ring-2 focus:ring-teal-500/20">
                     <SelectValue placeholder="Auto-detect" />
                   </SelectTrigger>
                   <SelectContent>
@@ -324,9 +507,11 @@ export default function EpochTool() {
               )}
             </CardContent>
           </Card>
+          )}
 
         </div>
 
+        {mode === "epochToDate" && (
         <div className="lg:col-span-7 space-y-6">
           {/* Timezone Picker */}
           <Card className="bg-zinc-950/60 border-zinc-700/80 backdrop-blur-xl animate-fade-in">
@@ -396,10 +581,11 @@ export default function EpochTool() {
             </Card>
           )}
         </div>
+        )}
       </div>
 
       {/* Comparison Table */}
-      {isValid && rows.length > 0 && (
+      {mode === "epochToDate" && isValid && rows.length > 0 && (
         <Card className="bg-zinc-950/60 border-zinc-700/80 backdrop-blur-xl animate-fade-in">
           <CardHeader className="border-b border-zinc-900 pb-4">
             <CardTitle className="text-sm text-zinc-400 font-semibold uppercase tracking-wider flex items-center gap-1.5">

@@ -45,7 +45,8 @@ function rgbToHex(r: number, g: number, b: number): string {
 function rgbToHsl(r: number, g: number, b: number): HSL {
   r /= 255; g /= 255; b /= 255;
   const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0, l = (max + min) / 2;
+  const l = (max + min) / 2;
+  let h = 0, s = 0;
 
   if (max !== min) {
     const d = max - min;
@@ -58,6 +59,10 @@ function rgbToHsl(r: number, g: number, b: number): HSL {
   }
 
   return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
+function isSameRgb(a: RGB, b: RGB): boolean {
+  return a.r === b.r && a.g === b.g && a.b === b.b;
 }
 
 function hslToRgb(h: number, s: number, l: number): RGB {
@@ -149,19 +154,41 @@ function extractColorsFromImage(imageData: ImageData, colorCount: number = 6): s
   return sortedColors;
 }
 
+const PRESET_COLORS = [
+  { name: "Red", hex: "#ef4444" },
+  { name: "Orange", hex: "#f97316" },
+  { name: "Amber", hex: "#f59e0b" },
+  { name: "Yellow", hex: "#eab308" },
+  { name: "Green", hex: "#22c55e" },
+  { name: "Emerald", hex: "#10b981" },
+  { name: "Teal", hex: "#14b8a6" },
+  { name: "Cyan", hex: "#06b6d4" },
+  { name: "Sky", hex: "#0ea5e9" },
+  { name: "Blue", hex: "#3b82f6" },
+  { name: "Indigo", hex: "#6366f1" },
+  { name: "Violet", hex: "#8b5cf6" },
+  { name: "Purple", hex: "#a855f7" },
+  { name: "Pink", hex: "#ec4899" },
+  { name: "Rose", hex: "#f43f5e" },
+  { name: "Slate", hex: "#64748b" },
+  { name: "White", hex: "#ffffff" },
+  { name: "Black", hex: "#000000" },
+];
+
 export default function ColorTool() {
   const [hexInput, setHexInput] = useState("");
   const [rgbInput, setRgbInput] = useState({ r: 0, g: 0, b: 0 });
   const [hslInput, setHslInput] = useState({ h: 0, s: 0, l: 0 });
   const [cmykInput, setCmykInput] = useState({ c: 0, m: 0, y: 0, k: 0 });
   const [currentColor, setCurrentColor] = useState<RGB>({ r: 100, g: 149, b: 237 }); // Default cornflower blue
-  const [copied, setCopied] = useState(false);
+  const [copiedLabel, setCopiedLabel] = useState<string | null>(null);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [extractedColors, setExtractedColors] = useState<string[]>([]);
   const [isExtracting, setIsExtracting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const colorPickerRef = useRef<HTMLInputElement>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -177,24 +204,54 @@ export default function ColorTool() {
 
   // Update all color formats when current color changes
   useEffect(() => {
-    const hex = rgbToHex(currentColor.r, currentColor.g, currentColor.b);
-    const hsl = rgbToHsl(currentColor.r, currentColor.g, currentColor.b);
-    const cmyk = rgbToCmyk(currentColor.r, currentColor.g, currentColor.b);
+    // 1. Update HEX input if the parsed value doesn't match current color
+    const hexClean = hexInput.replace("#", "").trim();
+    let currentHexRgb: RGB | null = null;
+    if (/^[0-9A-Fa-f]{6}$/.test(hexClean)) {
+      currentHexRgb = hexToRgb("#" + hexClean);
+    } else if (/^[0-9A-Fa-f]{3}$/.test(hexClean)) {
+      const expanded = hexClean.split("").map(char => char + char).join("");
+      currentHexRgb = hexToRgb("#" + expanded);
+    }
 
-    setHexInput(hex);
-    setRgbInput(currentColor);
-    setHslInput(hsl);
-    setCmykInput(cmyk);
+    if (!currentHexRgb || !isSameRgb(currentHexRgb, currentColor)) {
+      const hex = rgbToHex(currentColor.r, currentColor.g, currentColor.b);
+      setHexInput(hex);
+    }
+
+    // 2. Update RGB input if it doesn't match current color
+    if (!isSameRgb(rgbInput, currentColor)) {
+      setRgbInput(currentColor);
+    }
+
+    // 3. Update HSL input if it doesn't match current color
+    const currentHslRgb = hslToRgb(hslInput.h, hslInput.s, hslInput.l);
+    if (!isSameRgb(currentHslRgb, currentColor)) {
+      const hsl = rgbToHsl(currentColor.r, currentColor.g, currentColor.b);
+      setHslInput(hsl);
+    }
+
+    // 4. Update CMYK input if it doesn't match current color
+    const currentCmykRgb = cmykToRgb(cmykInput.c, cmykInput.m, cmykInput.y, cmykInput.k);
+    if (!isSameRgb(currentCmykRgb, currentColor)) {
+      const cmyk = rgbToCmyk(currentColor.r, currentColor.g, currentColor.b);
+      setCmykInput(cmyk);
+    }
   }, [currentColor]);
 
   // Handle HEX input
   const handleHexChange = (value: string) => {
-    const hex = value.replace("#", "");
-    if (/^[0-9A-Fa-f]{6}$/.test(hex)) {
-      const rgb = hexToRgb("#" + hex);
+    const cleanHex = value.replace("#", "").trim();
+    setHexInput(value);
+
+    if (/^[0-9A-Fa-f]{6}$/.test(cleanHex)) {
+      const rgb = hexToRgb("#" + cleanHex);
+      if (rgb) setCurrentColor(rgb);
+    } else if (/^[0-9A-Fa-f]{3}$/.test(cleanHex)) {
+      const expandedHex = cleanHex.split("").map(char => char + char).join("");
+      const rgb = hexToRgb("#" + expandedHex);
       if (rgb) setCurrentColor(rgb);
     }
-    setHexInput(value);
   };
 
   // Handle RGB input
@@ -207,7 +264,10 @@ export default function ColorTool() {
 
   // Handle HSL input
   const handleHslChange = (channel: keyof HSL, value: number) => {
-    const newHsl = { ...hslInput, [channel]: value };
+    const clampedValue = channel === "h" 
+      ? Math.max(0, Math.min(360, value)) 
+      : Math.max(0, Math.min(100, value));
+    const newHsl = { ...hslInput, [channel]: clampedValue };
     setHslInput(newHsl);
     const rgb = hslToRgb(newHsl.h, newHsl.s, newHsl.l);
     setCurrentColor(rgb);
@@ -263,11 +323,11 @@ export default function ColorTool() {
     reader.readAsDataURL(file);
   };
 
-  const copyToClipboard = (text: string, msg: string) => {
+  const copyToClipboard = (text: string, msg: string, label: string) => {
     navigator.clipboard.writeText(text);
-    setCopied(true);
+    setCopiedLabel(label);
     toast.success(msg);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopiedLabel(null), 2000);
   };
 
   const applyColor = (hex: string) => {
@@ -319,11 +379,44 @@ export default function ColorTool() {
                 </CardHeader>
 
                 <CardContent className="space-y-5">
-                  {/* Color Preview */}
+                  {/* Color Preview / Native Picker */}
                   <div
-                    className="w-full h-24 rounded-xl border-2 border-zinc-700 shadow-lg"
+                    onClick={() => colorPickerRef.current?.click()}
+                    className="relative w-full h-24 rounded-xl border-2 border-zinc-700 shadow-lg cursor-pointer group overflow-hidden"
                     style={{ backgroundColor: rgbToHex(currentColor.r, currentColor.g, currentColor.b) }}
-                  />
+                  >
+                    <input
+                      ref={colorPickerRef}
+                      type="color"
+                      value={rgbToHex(currentColor.r, currentColor.g, currentColor.b)}
+                      onChange={(e) => applyColor(e.target.value)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors pointer-events-none">
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity text-xs font-semibold text-white bg-black/50 px-2 py-1 rounded-md backdrop-blur-sm">
+                        Click to pick a color
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Preset Swatches */}
+                  <div className="space-y-2">
+                    <Label className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">
+                      Presets
+                    </Label>
+                    <div className="grid grid-cols-9 gap-2">
+                      {PRESET_COLORS.map((preset) => (
+                        <button
+                          key={preset.hex}
+                          type="button"
+                          title={preset.name}
+                          onClick={() => applyColor(preset.hex)}
+                          style={{ backgroundColor: preset.hex }}
+                          className="aspect-square rounded-lg border border-zinc-700 hover:scale-110 hover:border-pink-400/60 transition-transform shadow-sm"
+                        />
+                      ))}
+                    </div>
+                  </div>
 
                   {/* HEX Input */}
                   <div className="space-y-2">
@@ -341,10 +434,10 @@ export default function ColorTool() {
                         />
                       </div>
                       <Button
-                        onClick={() => copyToClipboard(hexInput, "HEX copied!")}
+                        onClick={() => copyToClipboard(hexInput, "HEX copied!", "hex-main")}
                         className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3"
                       >
-                        {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                        {copiedLabel === "hex-main" ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                       </Button>
                     </div>
                   </div>
@@ -454,10 +547,10 @@ export default function ColorTool() {
                       </div>
                       <Button
                         size="sm"
-                        onClick={() => copyToClipboard(value, `${label} copied!`)}
+                        onClick={() => copyToClipboard(value, `${label} copied!`, label)}
                         className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 h-9 px-2 shrink-0"
                       >
-                        {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        {copiedLabel === label ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                       </Button>
                     </div>
                   ))}
@@ -566,7 +659,7 @@ export default function ColorTool() {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              copyToClipboard(color, "Color copied!");
+                              copyToClipboard(color, "Color copied!", `extracted-${index}`);
                             }}
                             className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 h-7 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
                           >

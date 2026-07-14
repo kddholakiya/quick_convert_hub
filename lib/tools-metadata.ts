@@ -105,10 +105,21 @@ export const TOOLS_META: Record<ToolSlug, ToolMeta> = {
   },
   "epoch-converter": {
     activeTool: "epoch",
-    title: "Epoch Time Converter - Unix Timestamp to Date Online Free",
-    description: "Convert Unix epoch timestamps (seconds or milliseconds) to local date and time across any country or timezone, and compare multiple locations side-by-side.",
-    keywords: ["epoch converter", "unix timestamp converter", "epoch to date", "timestamp to timezone", "unix time online"],
-    heading: "Epoch Time Converter - Free Online Unix Timestamp & Timezone Converter",
+    title: "Epoch Time Converter - Compare & Convert Across Timezones & Countries",
+    description: "Convert epoch time to date and date to epoch time instantly. Compare epoch time across multiple countries, convert Unix timestamps timezone-wise, and view results in your device's local timezone by default. Free and 100% client-side.",
+    keywords: [
+      "epoch time",
+      "epoch time converter",
+      "epoch time compare",
+      "epoch time convert multiple country",
+      "epoch time timezone converter",
+      "epoch time timezone wise",
+      "unix timestamp converter",
+      "epoch to date",
+      "date to epoch time",
+      "unix time online",
+    ],
+    heading: "Epoch Time Converter - Compare Epoch Time Across Countries & Timezones",
   },
 };
 

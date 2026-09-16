@@ -199,4 +199,22 @@ export const TOOL_SEO_CONTENT: Record<ToolSlug, ToolSeoContent> = {
       { q: "Is my epoch timestamp data sent to a server?", a: "No. All epoch time conversion and timezone comparison happens locally in your browser. Nothing is uploaded or stored." },
     ],
   },
+  "barcode-scanner": {
+    heading: "Barcode & QR Scanner with CSV Export",
+    intro:
+      "Scan rectangular 1D barcodes (EAN-13, EAN-8, UPC-A, UPC-E, Code 128, Code 39, Code 93, ITF, Codabar) and square 2D codes (QR, Data Matrix, Aztec, PDF417) using your camera or uploaded images. Every scan is collected into a table you can annotate and download as a CSV file.",
+    features: [
+      { title: "Live Camera Scanning", desc: "Pick any connected camera and scan continuously — each detected code is appended to the results table, with duplicate merging and an optional beep on every hit." },
+      { title: "Batch Image Decoding", desc: "Drop one or many images and decode them in bulk; the source file name is stored alongside each decoded value." },
+      { title: "CSV Export", desc: "Download or copy a CSV containing the value, format, 1D/2D type, source, timestamp, scan count, and your own notes — quoted and escaped for Excel and Google Sheets." },
+    ],
+    faq: [
+      { q: "Which barcode formats can it scan?", a: "1D: EAN-13, EAN-8, UPC-A, UPC-E, Code 128, Code 39, Code 93, ITF, Codabar, and GS1 DataBar (RSS-14 / RSS Expanded). 2D: QR Code, Data Matrix, Aztec and PDF417." },
+      { q: "Can I scan many items in a row and export them together?", a: "Yes. Keep the camera running and scan item after item — each code becomes a row, and one click downloads the whole list as a CSV." },
+      { q: "What happens if I scan the same barcode twice?", a: "With duplicate merging on (the default), the existing row's quantity increases instead of adding a new row; turn it off to log every single scan separately." },
+      { q: "Can I add my own notes to scanned codes?", a: "Yes, each row has an editable note field that is included as a column in the exported CSV." },
+      { q: "Does the CSV open correctly in Excel?", a: "Yes. The file is UTF-8 with a BOM, every field is quoted and escaped, and values starting with =, +, - or @ are prefixed to prevent formula injection." },
+      { q: "Are my scans uploaded anywhere?", a: "No. Camera frames and images are decoded entirely in your browser, and the CSV is generated locally — nothing is sent to a server." },
+    ],
+  },
 };

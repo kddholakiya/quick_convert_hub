@@ -24,7 +24,8 @@ import {
   Link2,
   Clock,
   Search,
-  Timer
+  Timer,
+  ScanLine
 } from "lucide-react";
 import QrTool from "./qr-tool";
 import Base64Tool from "./base64-tool";
@@ -38,9 +39,10 @@ import CronTool from "./cron-tool";
 import RegexTool from "./regex-tool";
 import BcryptTool from "./bcrypt-tool";
 import EpochTool from "./epoch-tool";
+import BarcodeTool from "./barcode-tool";
 import { Button } from "@/components/ui/button";
 
-type ToolType = "qr" | "base64" | "crypto" | "json" | "jwt" | "hash" | "color" | "url" | "cron" | "regex" | "bcrypt" | "epoch";
+type ToolType = "qr" | "base64" | "crypto" | "json" | "jwt" | "hash" | "color" | "url" | "cron" | "regex" | "bcrypt" | "epoch" | "barcode";
 
 interface ToolItem {
   id: ToolType;
@@ -179,7 +181,17 @@ const TOOLS: ToolItem[] = [
     icon: Timer,
     badge: "New",
     accentClass: "text-teal-400 border-teal-500/20 bg-teal-500/5",
-    bgGlowClass: "from-teal-500/10 via-transparent to-transparent"
+    bgGlowClass: "from-teal-500/10 via-transparent to-transparent"  },
+  {
+    id: "barcode",
+    href: "/barcode-scanner",
+    name: "Barcode Scanner",
+    shortDesc: "Scan barcodes & export CSV",
+    desc: "Scan rectangular 1D barcodes (EAN, UPC, Code 128, Code 39, ITF) and square 2D codes (QR, Data Matrix, Aztec, PDF417) from camera or images, then download every scan as CSV.",
+    icon: ScanLine,
+    badge: "New",
+    accentClass: "text-fuchsia-400 border-fuchsia-500/20 bg-fuchsia-500/5",
+    bgGlowClass: "from-fuchsia-500/10 via-transparent to-transparent"
   }
 ];
 
@@ -240,7 +252,9 @@ export default function ToolHub({ activeTool }: { activeTool: ToolType }) {
                       ? BcryptTool
                       : activeTool === "regex"
                         ? RegexTool
-                        : EpochTool;
+                        : activeTool === "epoch"
+                          ? EpochTool
+                          : BarcodeTool;
 
   return (
     <div className="flex-1 w-full min-h-screen bg-black text-zinc-100 flex flex-col relative overflow-hidden font-sans select-none antialiased">

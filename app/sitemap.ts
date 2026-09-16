@@ -14,6 +14,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { slug: 'url-tools', priority: 0.6, changeFreq: 'weekly' as const },
     { slug: 'cron-translator', priority: 0.6, changeFreq: 'weekly' as const },
     { slug: 'regex-tester', priority: 0.6, changeFreq: 'weekly' as const },
+    { slug: 'epoch-converter', priority: 0.8, changeFreq: 'weekly' as const },
+    { slug: 'barcode-scanner', priority: 0.8, changeFreq: 'weekly' as const },
   ]
 
   return [

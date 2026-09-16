@@ -11,7 +11,8 @@ export type ToolSlug =
   | "url-tools"
   | "cron-translator"
   | "regex-tester"
-  | "epoch-converter";
+  | "epoch-converter"
+  | "barcode-scanner";
 
 interface ToolMeta {
   activeTool:
@@ -25,7 +26,8 @@ interface ToolMeta {
     | "url"
     | "cron"
     | "regex"
-    | "epoch";
+    | "epoch"
+    | "barcode";
   title: string;
   description: string;
   keywords: string[];
@@ -120,6 +122,24 @@ export const TOOLS_META: Record<ToolSlug, ToolMeta> = {
       "unix time online",
     ],
     heading: "Epoch Time Converter - Compare Epoch Time Across Countries & Timezones",
+  },
+  "barcode-scanner": {
+    activeTool: "barcode",
+    title: "Barcode & QR Scanner with CSV Export - Free Online",
+    description: "Scan 1D barcodes (EAN, UPC, Code 128, Code 39, ITF, Codabar) and 2D codes (QR, Data Matrix, Aztec, PDF417) with your camera or from images, then download every scan as a CSV. 100% client-side.",
+    keywords: [
+      "barcode scanner online",
+      "barcode to csv",
+      "scan barcode export csv",
+      "qr code scanner online",
+      "ean upc scanner",
+      "code 128 scanner",
+      "data matrix scanner",
+      "webcam barcode scanner",
+      "bulk barcode scanning",
+      "inventory barcode csv",
+    ],
+    heading: "Barcode & QR Scanner - Scan Codes and Export Data to CSV",
   },
 };
 
